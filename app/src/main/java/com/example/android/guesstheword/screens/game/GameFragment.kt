@@ -16,7 +16,11 @@
 
 package com.example.android.guesstheword.screens.game
 
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -62,6 +66,13 @@ class GameFragment : Fragment() {
             }
         })
 
+        viewModel.eventBuzz.observe(this, Observer {
+            if (it != GameViewModel.BuzzType.NO_BUZZ) {
+                buzz(it.pattern)
+                viewModel.onBuzzComplete()
+            }
+        })
+
         return binding.root
 
     }
@@ -72,5 +83,18 @@ class GameFragment : Fragment() {
     private fun gameFinished() {
         val action = GameFragmentDirections.actionGameToScore(viewModel.score.value ?: 0)
         findNavController(this).navigate(action)
+    }
+
+    private fun buzz(pattern: LongArray) {
+        val buzzer = activity?.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator?
+
+        buzzer?.let {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                buzzer.vibrate(VibrationEffect.createWaveform(pattern, -1))
+            } else {
+                //deprecated in API 26
+                buzzer.vibrate(pattern, -1)
+            }
+        }
     }
 }
